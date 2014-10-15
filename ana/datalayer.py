@@ -1,4 +1,5 @@
 import os
+import weakref
 import cPickle as pickle
 
 import logging
@@ -11,7 +12,7 @@ class DataLayer:
     '''
 
     def __init__(self, pickle_dir=None):
-        self.uuid_cache = { }
+        self.uuid_cache = weakref.WeakValueDictionary()
 
         if pickle_dir is not None:
             l.debug("Pickling into directory.")
