@@ -54,7 +54,7 @@ class StorableMeta(type):
         return self
 
 class StorableBase(object):
-    __slots__ = [ '_ana_uuid', '_stored' ]
+    __slots__ = [ '_ana_uuid', '_stored', '__weakref__' ]
 
     def __new__(cls, *args, **kwargs):
         return StorableMeta.__call__(cls, *args, **kwargs)
