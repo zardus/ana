@@ -7,8 +7,6 @@ l = logging.getLogger('ana.storable')
 
 class StorableMeta(type):
     def __call__(cls, *args, **kwargs):
-        print args, kwargs
-
         pickled = False
         uuid = None
         if len(args) >= 2 and isinstance(args[0], M):
