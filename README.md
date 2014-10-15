@@ -62,6 +62,18 @@ b = A.ana_load(a_uuid) # note that this is a class method
 assert b is a
 ```
 
+There is also a StorableABC subclass, for those that need to store ABCs in this way (i.e., collections.MutableMapping).
+You'll need to have it as a subclass in additon to the MutableMapping.
+For example:
+
+```python
+import ana
+import collections
+
+class StorableDict(ana.StorableABC, collections.MutableMapping):
+	# your code here
+```
+
 Have fun!
 
 ## Storage Backends
