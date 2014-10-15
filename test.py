@@ -8,17 +8,39 @@ l = logging.getLogger("ana.test")
 
 class A(ana.Storable):
     def __init__(self, n):
+        nose.tools.assert_false(hasattr(self, 'n'))
+
         self.n = n
-        l.debug("Initialized %s", self)
+        l.debug("%s.__init__", self)
 
     def __repr__(self):
-        return "<A %d>" % self.n
+        return "<A %s>" % str(self.n)
 
     def _ana_getstate(self):
-        return self.n
+        l.debug("%s._ana_getstate", self)
+        return (self.n,)
 
     def _ana_setstate(self, s):
-        self.n = s
+        self.n = s[0]
+        l.debug("%s._ana_setstate", self)
+
+class B(ana.Storable):
+    def __init__(self, n):
+        nose.tools.assert_false(hasattr(self, 'n'))
+
+        self.n = n
+        l.debug("%s.__init__", self)
+
+    def __repr__(self):
+        return "<A %s>" % str(self.n)
+
+    def _ana_getstate(self):
+        l.debug("%s._ana_getstate", self)
+        return (self.n,)
+
+    def _ana_setstate(self, s):
+        self.n = s[0]
+        l.debug("%s._ana_setstate", self)
 
 def test_ana():
     l.debug("Initializing 1")
@@ -45,6 +67,19 @@ def test_ana():
     two_copy2 = pickle.loads(pickle.dumps(two, pickle.HIGHEST_PROTOCOL))
     nose.tools.assert_equal(str(two_copy2), str(two))
 
+    l.debug("Initializing 3")
+    three = A(3)
+    three_str = str(three)
+    l.debug("Storing 3")
+    three_uuid = three.ana_store()
+    l.debug("Deleting 3")
+    del three
+    nose.tools.assert_false(three_uuid in ana.get_dl().uuid_cache)
+    l.debug("Loading 3")
+    three_copy = A.ana_load(three_uuid)
+    nose.tools.assert_equal(three_copy.ana_uuid, three_uuid)
+    nose.tools.assert_equal(str(three_copy), three_str)
+
 def test_dir():
     ana.dl = ana.DataLayer(pickle_dir="/tmp/test_ana")
     one = A(1)
@@ -58,7 +93,10 @@ if __name__ == '__main__':
     logging.getLogger("ana.datalayer").setLevel(logging.DEBUG)
 
     if len(sys.argv) > 1:
-        getattr('test_%s' % sys.argv[1])()
+        globals()['test_%s' % sys.argv[1]]()
     else:
         test_ana()
         test_dir()
+
+        A = B
+        test_ana()

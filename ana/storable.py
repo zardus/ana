@@ -5,6 +5,8 @@ l = logging.getLogger('ana.storable')
 
 #pylint:disable=attribute-defined-outside-init,access-member-before-definition
 
+import abc
+
 class StorableMeta(type):
     def __call__(cls, *args, **kwargs):
         pickled = False
@@ -24,34 +26,35 @@ class StorableMeta(type):
 
         if uuid is not None:
             try:
+                self = get_dl().uuid_cache[uuid]
                 l.debug("... returning cached")
-                return get_dl().uuid_cache[uuid]
             except KeyError:
                 # create the object and set up Storable properties
-                self = super(Storable, cls).__new__(cls) #pylint:disable=bad-super-call
+                self = super(StorableBase, cls).__new__(cls) #pylint:disable=bad-super-call
                 self._ana_uuid = uuid
                 self._stored = True
 
                 # restore the state
                 s = get_dl().load_state(self._ana_uuid)
-                self.__init__(s)
+                self._ana_setstate(s)
 
                 # cache and return
                 get_dl().uuid_cache[uuid] = self
                 l.debug("... returning newly cached")
-                return self
         else:
-            self = super(Storable, cls).__new__(cls) #pylint:disable=bad-super-call
+            self = super(StorableBase, cls).__new__(cls) #pylint:disable=bad-super-call
             self._ana_uuid = None
             self._stored = False
             if not pickled:
                 self.__init__(*args, **kwargs)
             l.debug("... returning new uncached")
-            return self
 
-class Storable(object):
+        if not hasattr(self, '_ana_uuid'):
+            raise ANAError("Storable somehow got through without an _ana_uuid attr")
+        return self
+
+class StorableBase(object):
     __slots__ = [ '_ana_uuid', '_stored' ]
-    __metaclass__ = StorableMeta
 
     def __new__(cls, *args, **kwargs):
         return StorableMeta.__call__(cls, *args, **kwargs)
@@ -110,13 +113,23 @@ class Storable(object):
 
     def __setstate__(self, s):
         if isinstance(s, M):
-            l.debug("Ignoring setstate for UUID %s", self._ana_uuid)
+            l.debug("Ignoring setstate for marked Storable")
         else:
-            l.debug("Setting state on storable with UUID %s.", self._ana_uuid)
+            l.debug("Setting state on storable.")
             self._ana_setstate(s)
 
     def __getnewargs__(self):
         return (M(), self._ana_uuid,)
+
+
+class Storable(StorableBase): #pylint:disable=abstract-method
+    __metaclass__ = StorableMeta
+
+class StorableMetaABC(StorableMeta, abc.ABCMeta):
+    pass
+
+class StorableABC(StorableBase): #pylint:disable=abstract-method
+    __metaclass__ = StorableMetaABC
 
 from . import get_dl
 from . import M
