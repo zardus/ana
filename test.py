@@ -11,7 +11,7 @@ class A(ana.Storable):
         l.debug("Initialized %s", self)
 
     def __repr__(self):
-        return "<A %s %d>" % (id(self), self.n)
+        return "<A %d>" % self.n
 
     def _ana_getstate(self):
         return self.n
@@ -34,8 +34,15 @@ def test_ana():
     two_p = pickle.dumps(two, pickle.HIGHEST_PROTOCOL)
     two_copy = pickle.loads(two_p)
 
-    nose.tools.assert_equal(str(one_copy), str(one))
-    nose.tools.assert_not_equal(str(two_copy), str(two))
+    nose.tools.assert_is(one_copy, one)
+    nose.tools.assert_is_not(two_copy, two)
+    nose.tools.assert_equal(str(two_copy), str(two))
+
+    nose.tools.assert_is(one, A.ana_load(one.ana_store()))
+    nose.tools.assert_is(two, A.ana_load(two.ana_store()))
+
+    two_copy2 = pickle.loads(pickle.dumps(two, pickle.HIGHEST_PROTOCOL))
+    nose.tools.assert_equal(str(two_copy2), str(two))
 
 if __name__ == '__main__':
     import sys

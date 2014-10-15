@@ -15,8 +15,12 @@ class StorableMeta(type):
             uuid = args[1]
             args = args[2:]
             pickled = True
-        if len(args) > 0 and isinstance(args[0], M):
-            raise ANAError("multiple M() objects passed to Storable with UUID %s" % uuid)
+
+        if len(args) != 0:
+            if pickled:
+                raise ANAError("too many arguments passed to StorableMeta.__call__ in unpickling")
+            if isinstance(args[0], M):
+                raise ANAError("multiple M() objects passed to Storable with UUID %s" % uuid)
 
         l.debug("Storable being created with uuid %s", uuid)
 
@@ -69,18 +73,17 @@ class Storable(object):
     def ana_uuid(self):
         return self.make_uuid()
 
-    def store(self):
+    def ana_store(self):
         '''
         Assigns a UUID to the storable and stores the actual data.
         '''
         u = self.ana_uuid #pylint:disable=unused-variable
-        return self.__getstate__()
+        self.__getstate__()
+        return u
 
     @classmethod
-    def load(cls, s):
-        self = cls.__new__(cls)
-        self.__setstate__(s)
-        return self
+    def ana_load(cls, uuid):
+        return StorableMeta.__call__(cls, M(), uuid)
 
     #
     # ANA API
