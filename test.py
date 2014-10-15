@@ -1,3 +1,4 @@
+import os
 import ana
 import nose
 import pickle
@@ -44,6 +45,12 @@ def test_ana():
     two_copy2 = pickle.loads(pickle.dumps(two, pickle.HIGHEST_PROTOCOL))
     nose.tools.assert_equal(str(two_copy2), str(two))
 
+def test_dir():
+    ana.dl = ana.DataLayer(pickle_dir="/tmp/test_ana")
+    one = A(1)
+    nose.tools.assert_is(one, A.ana_load(one.ana_store()))
+    nose.tools.assert_true(os.path.exists("/tmp/test_ana/%s.p" % one.ana_uuid))
+
 if __name__ == '__main__':
     import sys
     logging.getLogger("ana.test").setLevel(logging.DEBUG)
@@ -54,3 +61,4 @@ if __name__ == '__main__':
         getattr('test_%s' % sys.argv[1])()
     else:
         test_ana()
+        test_dir()
