@@ -51,10 +51,10 @@ def test_ana():
     one.make_uuid()
 
     l.debug("Copying 1")
-    one_p = pickle.dumps(one, pickle.HIGHEST_PROTOCOL)
+    one_p = pickle.dumps(one)
     one_copy = pickle.loads(one_p)
     l.debug("Copying 2")
-    two_p = pickle.dumps(two, pickle.HIGHEST_PROTOCOL)
+    two_p = pickle.dumps(two)
     two_copy = pickle.loads(two_p)
 
     nose.tools.assert_is(one_copy, one)
@@ -64,7 +64,7 @@ def test_ana():
     nose.tools.assert_is(one, A.ana_load(one.ana_store()))
     nose.tools.assert_is(two, A.ana_load(two.ana_store()))
 
-    two_copy2 = pickle.loads(pickle.dumps(two, pickle.HIGHEST_PROTOCOL))
+    two_copy2 = pickle.loads(pickle.dumps(two))
     nose.tools.assert_equal(str(two_copy2), str(two))
 
     l.debug("Initializing 3")
@@ -77,7 +77,7 @@ def test_ana():
     nose.tools.assert_false(three_uuid in ana.get_dl().uuid_cache)
     l.debug("Loading 3")
     three_copy = A.ana_load(three_uuid)
-    nose.tools.assert_equal(three_copy.ana_uuid, three_uuid)
+    nose.tools.assert_equal(three_copy.ana_uuid, three_uuid) #pylint:disable=no-member
     nose.tools.assert_equal(str(three_copy), three_str)
 
 def test_dir():
@@ -91,6 +91,7 @@ if __name__ == '__main__':
     logging.getLogger("ana.test").setLevel(logging.DEBUG)
     logging.getLogger("ana.storable").setLevel(logging.DEBUG)
     logging.getLogger("ana.datalayer").setLevel(logging.DEBUG)
+    logging.getLogger("ana.d").setLevel(logging.DEBUG)
 
     if len(sys.argv) > 1:
         globals()['test_%s' % sys.argv[1]]()

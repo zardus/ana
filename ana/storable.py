@@ -3,83 +3,21 @@ import uuid as uuid_module
 import logging
 l = logging.getLogger('ana.storable')
 
-#pylint:disable=attribute-defined-outside-init,access-member-before-definition
-
-import abc
-
-class StorableMeta(type):
-    def __call__(cls, *args, **kwargs):
-        # this conveys that we are being called from *inside* the StorableBase __new__,
-        # and thus should call object.__new__ instead of cls.__new__
-        in_new = kwargs.pop('in_new', False)
-        if in_new or cls.__new__ is StorableBase.__new__:
-            new = super(StorableBase, cls).__new__
-            new_args = ( )
-            new_kwargs = { }
-        else:
-            new = cls.__new__
-            new_args = args
-            new_kwargs = kwargs
-
-        pickled = False
-        uuid = None
-        if len(args) >= 2 and isinstance(args[0], M):
-            uuid = args[1]
-            args = args[2:]
-            pickled = True
-
-        if len(args) != 0:
-            if pickled:
-                raise ANAError("too many arguments passed to StorableMeta.__call__ in unpickling")
-            if isinstance(args[0], M):
-                raise ANAError("multiple M() objects passed to Storable with UUID %s" % uuid)
-
-        l.debug("Storable being created with uuid %s", uuid)
-
-        if uuid is None:
-            self = new(cls, *new_args, **new_kwargs)
-            self._ana_uuid = None
-            self._stored = False
-            if not pickled:
-                self.__init__(*args, **kwargs)
-            l.debug("... returning new uncached")
-        elif uuid in get_dl().uuid_cache:
-            self = get_dl().uuid_cache[uuid]
-            l.debug("... returning cached")
-        else:
-            # create the object and set up Storable properties
-            self = new(cls, *new_args, **new_kwargs)
-            self._ana_uuid = uuid
-            self._stored = True
-
-            # restore the state
-            s = get_dl().load_state(self._ana_uuid)
-            self._ana_setstate(s)
-
-            # cache and return
-            get_dl().uuid_cache[uuid] = self
-            l.debug("... returning newly cached")
-
-        if not hasattr(self, '_ana_uuid'):
-            raise ANAError("Storable somehow got through without an _ana_uuid attr")
-        return self
-
-class StorableBase(object):
+class Storable(object):
     __slots__ = [ '_ana_uuid', '_stored', '__weakref__' ]
-
-    def __new__(cls, *args, **kwargs):
-        return StorableMeta.__call__(cls, *args, in_new=True, **kwargs)
 
     def make_uuid(self, uuid=None):
         '''
         If the storable has no UUID, this function creates one. The UUID is then
         returned.
         '''
-        if self._ana_uuid is None:
-            self._ana_uuid = str(uuid_module.uuid4()) if uuid is None else uuid
-            l.debug("Caching UUID %s", self._ana_uuid)
-            get_dl().uuid_cache[self._ana_uuid] = self
-        return self._ana_uuid
+        u = getattr(self, '_ana_uuid', None)
+        if u is None:
+            u = str(uuid_module.uuid4()) if uuid is None else uuid
+            l.debug("Caching UUID %s", u)
+            get_dl().uuid_cache[u] = self
+            setattr(self, '_ana_uuid', u)
+        return u
 
     @property
     def ana_uuid(self):
@@ -89,13 +27,15 @@ class StorableBase(object):
         '''
         Assigns a UUID to the storable and stores the actual data.
         '''
-        u = self.ana_uuid #pylint:disable=unused-variable
-        self.__getstate__()
+        u = self.ana_uuid
+        if not getattr(self, '_stored', False):
+            get_dl().store_state(u, self._ana_getstate())
+            setattr(self, '_stored', True)
         return u
 
     @classmethod
     def ana_load(cls, uuid):
-        return StorableMeta.__call__(cls, M(), uuid)
+        return D(uuid, cls, get_dl().load_state(uuid))
 
     #
     # ANA API
@@ -111,37 +51,14 @@ class StorableBase(object):
     # Pickle API
     #
 
-    def __getstate__(self):
-        if self._ana_uuid is not None:
-            if not self._stored:
-                l.debug("Storing Storable with UUID %s", self._ana_uuid)
-                get_dl().store_state(self._ana_uuid, self._ana_getstate())
-                self._stored = True
-            return M()
+    def __reduce__(self):
+        u = getattr(self, '_ana_uuid', None)
+        if u is None:
+            return (D, (None, self.__class__, self._ana_getstate()))
         else:
-            l.debug("Pickling full state.")
-            return self._ana_getstate()
+            self.ana_store()
+            return (D, (u, self.__class__, None))
 
-    def __setstate__(self, s):
-        if isinstance(s, M):
-            l.debug("Ignoring setstate for marked Storable")
-        else:
-            l.debug("Setting state on storable.")
-            self._ana_setstate(s)
-
-    def __getnewargs__(self):
-        return (M(), self._ana_uuid,)
-
-
-class Storable(StorableBase): #pylint:disable=abstract-method
-    __metaclass__ = StorableMeta
-
-class StorableMetaABC(StorableMeta, abc.ABCMeta):
-    pass
-
-class StorableABC(StorableBase): #pylint:disable=abstract-method
-    __metaclass__ = StorableMetaABC
 
 from . import get_dl
-from . import M
-from .errors import ANAError
+from .d import D
