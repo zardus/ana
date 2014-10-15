@@ -9,6 +9,18 @@ import abc
 
 class StorableMeta(type):
     def __call__(cls, *args, **kwargs):
+        # this conveys that we are being called from *inside* the StorableBase __new__,
+        # and thus should call object.__new__ instead of cls.__new__
+        in_new = kwargs.pop('in_new', False)
+        if in_new or cls.__new__ is StorableBase.__new__:
+            new = super(StorableBase, cls).__new__
+            new_args = ( )
+            new_kwargs = { }
+        else:
+            new = cls.__new__
+            new_args = args
+            new_kwargs = kwargs
+
         pickled = False
         uuid = None
         if len(args) >= 2 and isinstance(args[0], M):
@@ -24,30 +36,29 @@ class StorableMeta(type):
 
         l.debug("Storable being created with uuid %s", uuid)
 
-        if uuid is not None:
-            try:
-                self = get_dl().uuid_cache[uuid]
-                l.debug("... returning cached")
-            except KeyError:
-                # create the object and set up Storable properties
-                self = super(StorableBase, cls).__new__(cls) #pylint:disable=bad-super-call
-                self._ana_uuid = uuid
-                self._stored = True
-
-                # restore the state
-                s = get_dl().load_state(self._ana_uuid)
-                self._ana_setstate(s)
-
-                # cache and return
-                get_dl().uuid_cache[uuid] = self
-                l.debug("... returning newly cached")
-        else:
-            self = super(StorableBase, cls).__new__(cls) #pylint:disable=bad-super-call
+        if uuid is None:
+            self = new(cls, *new_args, **new_kwargs)
             self._ana_uuid = None
             self._stored = False
             if not pickled:
                 self.__init__(*args, **kwargs)
             l.debug("... returning new uncached")
+        elif uuid in get_dl().uuid_cache:
+            self = get_dl().uuid_cache[uuid]
+            l.debug("... returning cached")
+        else:
+            # create the object and set up Storable properties
+            self = new(cls, *new_args, **new_kwargs)
+            self._ana_uuid = uuid
+            self._stored = True
+
+            # restore the state
+            s = get_dl().load_state(self._ana_uuid)
+            self._ana_setstate(s)
+
+            # cache and return
+            get_dl().uuid_cache[uuid] = self
+            l.debug("... returning newly cached")
 
         if not hasattr(self, '_ana_uuid'):
             raise ANAError("Storable somehow got through without an _ana_uuid attr")
@@ -57,7 +68,7 @@ class StorableBase(object):
     __slots__ = [ '_ana_uuid', '_stored', '__weakref__' ]
 
     def __new__(cls, *args, **kwargs):
-        return StorableMeta.__call__(cls, *args, **kwargs)
+        return StorableMeta.__call__(cls, *args, in_new=True, **kwargs)
 
     def make_uuid(self, uuid=None):
         '''
