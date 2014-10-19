@@ -24,23 +24,8 @@ class A(ana.Storable):
         self.n = s[0]
         l.debug("%s._ana_setstate", self)
 
-class B(ana.Storable):
-    def __init__(self, n):
-        nose.tools.assert_false(hasattr(self, 'n'))
-
-        self.n = n
-        l.debug("%s.__init__", self)
-
-    def __repr__(self):
-        return "<A %s>" % str(self.n)
-
-    def _ana_getstate(self):
-        l.debug("%s._ana_getstate", self)
-        return (self.n,)
-
-    def _ana_setstate(self, s):
-        self.n = s[0]
-        l.debug("%s._ana_setstate", self)
+    def _ana_getliteral(self):
+        return { 'n': self.n }
 
 def test_ana():
     l.debug("Initializing 1")
@@ -80,6 +65,14 @@ def test_ana():
     nose.tools.assert_equal(three_copy.ana_uuid, three_uuid) #pylint:disable=no-member
     nose.tools.assert_equal(str(three_copy), three_str)
 
+    known = set()
+    literal_three = three_copy.to_literal(known)
+    nose.tools.assert_equal(literal_three['ana_object']['n'], 3)
+    nose.tools.assert_false('n' not in literal_three['ana_object'])
+    second_literal_three = three_copy.to_literal(known)
+    nose.tools.assert_true('ana_object' not in second_literal_three)
+    nose.tools.assert_equal(second_literal_three['ana_uuid'], literal_three['ana_uuid'])
+
 def test_dir():
     ana.dl = ana.DataLayer(pickle_dir="/tmp/test_ana")
     one = A(1)
@@ -98,6 +91,3 @@ if __name__ == '__main__':
     else:
         test_ana()
         test_dir()
-
-        A = B
-        test_ana()
