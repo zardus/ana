@@ -66,12 +66,14 @@ def test_ana():
     nose.tools.assert_equal(str(three_copy), three_str)
 
     known = set()
-    literal_three = three_copy.to_literal(known)
-    nose.tools.assert_equal(literal_three['ana_object']['n'], 3)
-    nose.tools.assert_false('n' not in literal_three['ana_object'])
-    second_literal_three = three_copy.to_literal(known)
-    nose.tools.assert_true('ana_object' not in second_literal_three)
-    nose.tools.assert_equal(second_literal_three['ana_uuid'], literal_three['ana_uuid'])
+    first_json = three_copy.to_literal(known)
+    nose.tools.assert_true(three_copy.ana_uuid in first_json['objects'])
+    nose.tools.assert_equal(first_json['objects'][three_copy.ana_uuid]['object']['n'], three_copy.n)
+    nose.tools.assert_equal(first_json['value']['ana_uuid'], three_copy.ana_uuid)
+
+    second_json = three_copy.to_literal(known)
+    nose.tools.assert_false(three_copy.ana_uuid in second_json['objects'])
+    nose.tools.assert_equal(second_json['value']['ana_uuid'], three_copy.ana_uuid)
 
 def test_dir():
     ana.dl = ana.DataLayer(pickle_dir="/tmp/test_ana")

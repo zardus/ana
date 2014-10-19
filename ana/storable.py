@@ -38,40 +38,39 @@ class Storable(object):
         return D(uuid, cls, get_dl().load_state(uuid))
 
     @staticmethod
-    def _to_literal(o, known_set):
+    def _any_to_literal(o, known_set, objects):
         if o is None:
             return None
         elif type(o) in (long, int, str, unicode, float, bool):
             return o
         elif isinstance(o, dict):
             return {
-                Storable._to_literal(k, known_set):Storable._to_literal(v, known_set) for k,v in o.iteritems()
+                Storable._any_to_literal(k, known_set, objects):Storable._any_to_literal(v, known_set, objects) for k,v in o.iteritems()
             }
         elif isinstance(o, list) or isinstance(o, tuple) or isinstance(o, set):
-            return [ Storable._to_literal(e, known_set) for e in o ]
+            return [ Storable._any_to_literal(e, known_set, objects) for e in o ]
         elif isinstance(o, Storable):
-            return o.to_literal(known_set)
+            return o._self_to_literal(known_set, objects)
         else:
-            Storable._to_literal(o, known_set)
+            Storable._any_to_literal(o, known_set, objects)
 
-    def to_literal(self, known_set):
-        d = {
-            'ana_class': self.__class__.__name__,
-            'ana_module': getattr(self, '__module__', '__unknown__')
-        }
-        uuid = getattr(self, '_ana_uuid', None)
-        if uuid is not None:
-            d['ana_uuid'] = uuid
-            if uuid in known_set:
-                return d
-            else:
-                known_set.add(uuid)
+    def _self_to_literal(self, known_set, objects):
+        uuid = self.make_uuid()
 
-        o = self._ana_getliteral()
-        if o is NotImplemented:
-            o = self._ana_getstate()
-        d['ana_object'] = self._to_literal(o, known_set)
-        return d
+        if uuid not in known_set:
+            o = self._ana_getliteral()
+            objects[uuid] = {
+                #'module': getattr(self, '__module__', '__unknown__'),
+                'class': self.__class__.__name__,
+                'object': self._any_to_literal(o, known_set, objects)
+            }
+            known_set.add(uuid)
+
+        return { 'ana_uuid': uuid }
+
+    def to_literal(self, known_set, objects=None):
+        objects = { } if objects is None else objects
+        return { 'objects': objects, 'value': self._self_to_literal(known_set, objects) }
 
     #
     # ANA API
@@ -83,8 +82,8 @@ class Storable(object):
     def _ana_setstate(self, s):
         raise NotImplementedError()
 
-    def _ana_getliteral(self): #pylint:disable=no-self-use
-        return NotImplemented
+    def _ana_getliteral(self):
+        return self._ana_getstate()
 
     #
     # Pickle API

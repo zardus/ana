@@ -36,7 +36,7 @@ class A(ana.Storable):
 		self.n = s
 
 # create an instance
-a = A()
+a = A(10)
 
 # First, this instance will be pickled more or less normally.
 # For example, the following will actually contain the state,
@@ -63,6 +63,79 @@ assert b is a
 ```
 
 Have fun!
+
+## JSON
+
+ANA has the capability to serialize to a literal format such as JSON, out of the box.
+By default, it does it's best to serialize any collections in what's returned by `_ana_getstate`, which is often enough.
+If something more complex is needed, a `Storable` can overload `_ana_getliteral`, which is then called instead of `_ana_getstate`.
+
+Since the list of already-serialized UUIDs may be client-dependent (for an ANA instance that serves multiple clients), this functionality receives, and updates, a set of which UUIDs have already been serialized.
+Furthermore, it assigns a UUID to every ANA-serializable object.
+
+With the example `A` class, we would do the following:
+
+```python
+a = A(10)
+
+# start with an empty set
+serialized = set()
+
+# serialize to literal
+a_literal = a.to_literal(serialized)
+
+# the object is marked as serialized
+assert a.ana_uuid in serialized
+
+# the dictionary has a list of objects and the root node
+assert a_literal == {
+	'objects': {
+		a.ana_uuid: { 'class': a.__class__.__name__, 'object': a._get_state() }
+	},
+	'value': { 'ana_uuid': a.ana_uuid }
+}
+
+# in this case, the literal value would be, with an example UUID:
+assert a.ana_uuid == "142be0d1-e3b4-4d7e-a2ce-9842285f3b18" # let's pretend
+assert a_literal == {
+	'objects': {
+		'142be0d1-e3b4-4d7e-a2ce-9842285f3b18': {
+			'class': 'A',
+			'object': 10
+		}
+	},
+	'value': { 'ana_uuid': '142be0d1-e3b4-4d7e-a2ce-9842285f3b18' }
+}
+
+# if you serialize this again, with the same serialized set, ANA is
+# smart enough to avoid re-serializing objects
+assert a.to_literal(serialized) == {
+	'objects': { }
+	'value': { 'ana_uuid': '142be0d1-e3b4-4d7e-a2ce-9842285f3b18' }
+}
+
+# furthermore, object trees are properly handled
+b = A(20)
+a.n = b
+serialized = set()
+
+assert b.ana_uuid == "fbda537c-38f0-4db7-b5f2-3e3d8afe7c1f" # some more pretending
+assert a.to_literal(serialized) == {
+	'objects': {
+		'142be0d1-e3b4-4d7e-a2ce-9842285f3b18': {
+			'class': 'A',
+			'object': { 'ana_uuid': 'fbda537c-38f0-4db7-b5f2-3e3d8afe7c1f'
+		},
+		'fbda537c-38f0-4db7-b5f2-3e3d8afe7c1f': {
+			'class': 'A',
+			'object': 20
+		}
+	}
+	'value': { 'ana_uuid': '142be0d1-e3b4-4d7e-a2ce-9842285f3b18' }
+}
+```
+
+This can then be serialized out to JSON with something like `json.dumps(a_literal)`!
 
 ## Storage Backends
 
