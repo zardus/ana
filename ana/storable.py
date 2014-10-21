@@ -76,11 +76,20 @@ class Storable(object):
     # ANA API
     #
 
+    @classmethod
+    def _all_slots(cls):
+        #pylint:disable=no-member
+        return sum((o.__slots__ for o in cls.mro() if hasattr(o, '__slots__') and not o is Storable),[])
+
     def _ana_getstate(self):
-        raise NotImplementedError()
+        if hasattr(self, '__dict__'):
+            return self.__dict__
+        else:
+            return { k: getattr(self, k) for k in self._all_slots() if hasattr(self, k) }
 
     def _ana_setstate(self, s):
-        raise NotImplementedError()
+        for k,v in s.items():
+            setattr(self, k, v)
 
     def _ana_getliteral(self):
         return self._ana_getstate()
