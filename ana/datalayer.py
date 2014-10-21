@@ -30,7 +30,7 @@ class DataLayer:
             self._state_store = { }
 
     def store_state(self, uuid, s):
-        p = pickle.dumps(s, protocol=-1)
+        p = pickle.dumps(s, protocol=pickle.HIGHEST_PROTOCOL)
         if self._store_type == 'pickle':
             open(os.path.join(self._dir, str(uuid)+'.p'), 'w').write(p)
         elif self._store_type == 'dict':

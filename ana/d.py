@@ -12,22 +12,23 @@ class D(object):
             l.debug("... returning cached")
             return get_dl().uuid_cache[uuid]
 
+        self = super(Storable, child_cls).__new__(child_cls) #pylint:disable=bad-super-call
+        if uuid is not None:
+            get_dl().uuid_cache[uuid] = self
+
         if uuid is not None and state is None:
             l.debug("... loading state")
             state = get_dl().load_state(uuid)
 
-        self = super(Storable, child_cls).__new__(child_cls) #pylint:disable=bad-super-call
-        self._ana_setstate(state)
-        self._ana_uuid = uuid
-
         if uuid is not None:
-            # cache and return
-            get_dl().uuid_cache[uuid] = self
             self._stored = True
             l.debug("... returning newly cached")
         else:
             self._stored = False
             l.debug("... returning non-UUID storable")
+
+        self._ana_setstate(state)
+        self._ana_uuid = uuid
 
         if not hasattr(self, '_ana_uuid'):
             raise ANAError("Storable somehow got through without an _ana_uuid attr")

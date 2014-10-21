@@ -27,10 +27,11 @@ class Storable(object):
         '''
         Assigns a UUID to the storable and stores the actual data.
         '''
-        u = self.ana_uuid
+        u = self.make_uuid()
         if not getattr(self, '_stored', False):
-            get_dl().store_state(u, self._ana_getstate())
+            state = self._ana_getstate()
             setattr(self, '_stored', True)
+            get_dl().store_state(u, state)
         return u
 
     @classmethod
