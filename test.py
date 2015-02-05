@@ -59,6 +59,8 @@ def test_ana():
     three_uuid = three.ana_store()
     l.debug("Deleting 3")
     del three
+    import gc
+    gc.collect()
     nose.tools.assert_false(three_uuid in ana.get_dl().uuid_cache)
     l.debug("Loading 3")
     three_copy = A.ana_load(three_uuid)

@@ -31,14 +31,18 @@ class DataLayer:
 
     def store_state(self, uuid, s):
         p = pickle.dumps(s, protocol=pickle.HIGHEST_PROTOCOL)
+        if len(p) == 0:
+            raise Exception('wtf')
         if self._store_type == 'pickle':
-            open(os.path.join(self._dir, str(uuid)+'.p'), 'w').write(p)
+            with open(os.path.join(self._dir, str(uuid)+'.p'), 'w') as f:
+                f.write(p)
         elif self._store_type == 'dict':
             self._state_store[uuid] = p
 
     def load_state(self, uuid):
         if self._store_type == 'pickle':
-            p = open(os.path.join(self._dir, str(uuid)+'.p')).read()
+            with open(os.path.join(self._dir, str(uuid)+'.p')) as f:
+                p = f.read()
         elif self._store_type == 'dict':
             p = self._state_store[uuid]
 
