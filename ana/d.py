@@ -8,9 +8,11 @@ class D(object):
         if uuid is None and state is None:
             raise ANAError("D received a None uuid and a None state")
 
-        if uuid is not None and uuid in get_dl().uuid_cache:
-            l.debug("... returning cached")
-            return get_dl().uuid_cache[uuid]
+        if uuid is not None:
+            self = get_dl().uuid_cache.get(uuid, None)
+            if self:
+                l.debug("... returning cached")
+                return self
 
         self = super(Storable, child_cls).__new__(child_cls) #pylint:disable=bad-super-call
         if uuid is not None:
