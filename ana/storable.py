@@ -3,6 +3,9 @@ import uuid as uuid_module
 import logging
 l = logging.getLogger('ana.storable')
 
+def _all_slots(cls):
+    return sum((o.__slots__ for o in cls.mro() if hasattr(o, '__slots__') and not o is Storable),[])
+
 class Storable(object):
     __slots__ = [ '_ana_uuid', '_stored', '__weakref__' ]
 
@@ -53,22 +56,29 @@ class Storable(object):
         elif isinstance(o, Storable):
             return o._self_to_literal(known_set, objects)
         else:
+            if hasattr(o, '__getstate__'):
+                state = o.__getstate__()
+            elif hasattr(o, '__dict__'):
+                state = o.__dict__
+            else:
+                state = { k: getattr(o, k) for k in _all_slots(o.__class__)  }
+
             return {
                 'class': o.__class__.__name__,
-                'object': o.__getstate__()
+                'object': Storable._any_to_literal(state, known_set, objects)
             }
 
     def _self_to_literal(self, known_set, objects):
         uuid = self.make_uuid()
 
         if uuid not in known_set:
+            known_set.add(uuid)
             o = self._ana_getliteral()
             objects[uuid] = {
                 #'module': getattr(self, '__module__', '__unknown__'),
                 'class': self.__class__.__name__,
                 'object': self._any_to_literal(o, known_set, objects)
             }
-            known_set.add(uuid)
 
         return { 'ana_uuid': uuid }
 
@@ -83,7 +93,7 @@ class Storable(object):
     @classmethod
     def _all_slots(cls):
         #pylint:disable=no-member
-        return sum((o.__slots__ for o in cls.mro() if hasattr(o, '__slots__') and not o is Storable),[])
+        return _all_slots(cls)
 
     def _ana_getstate(self):
         if hasattr(self, '__dict__'):
