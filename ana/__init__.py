@@ -1,3 +1,5 @@
+#pylint:disable=wildcard-import
+
 from .datalayer import *
 
 dl = DataLayer()
