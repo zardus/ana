@@ -53,7 +53,10 @@ class Storable(object):
         elif isinstance(o, Storable):
             return o._self_to_literal(known_set, objects)
         else:
-            Storable._any_to_literal(o, known_set, objects)
+            return {
+                'class': o.__class__.__name__,
+                'object': o.__getstate__()
+            }
 
     def _self_to_literal(self, known_set, objects):
         uuid = self.make_uuid()
