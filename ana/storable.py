@@ -82,7 +82,10 @@ class Storable(object):
 
         return { 'ana_uuid': uuid }
 
-    def to_literal(self, known_set, objects=None):
+    def to_literal(self, known_set=None, objects=None):
+        if known_set is None:
+            known_set = set()
+
         objects = { } if objects is None else objects
         return { 'objects': objects, 'value': self._self_to_literal(known_set, objects) }
 
