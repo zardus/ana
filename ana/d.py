@@ -9,7 +9,7 @@ def D(uuid, child_cls, state):
 
     if uuid is not None:
         self = get_dl().uuid_cache.get(uuid, None)
-        if self:
+        if self is not None:
             l.debug("... returning cached")
             return self
 
