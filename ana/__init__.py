@@ -1,5 +1,8 @@
 #pylint:disable=wildcard-import
 
+import logging
+logging.getLogger("ana").addHandler(logging.NullHandler())
+
 from .datalayer import *
 
 dl = DataLayer()
