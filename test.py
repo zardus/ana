@@ -1,4 +1,5 @@
 import os
+import gc
 import ana
 import nose
 import pickle
@@ -59,7 +60,6 @@ def test_ana():
     three_uuid = three.ana_store()
     l.debug("Deleting 3")
     del three
-    import gc
     gc.collect()
     nose.tools.assert_false(three_uuid in ana.get_dl().uuid_cache)
     l.debug("Loading 3")
@@ -82,6 +82,15 @@ def test_dir():
     one = A(1)
     nose.tools.assert_is(one, A.ana_load(one.ana_store()))
     nose.tools.assert_true(os.path.exists("/tmp/test_ana/%s.p" % one.ana_uuid))
+
+    uuid = one.ana_uuid
+    old_id = id(one)
+    del one
+    gc.collect()
+    ana.dl = ana.DataLayer(pickle_dir="/tmp/test_ana")
+    two = A.ana_load(uuid)
+    nose.tools.assert_equals(uuid, two.ana_uuid)
+    nose.tools.assert_not_equals(old_id, id(two))
 
 if __name__ == '__main__':
     import sys
