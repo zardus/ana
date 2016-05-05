@@ -144,4 +144,5 @@ There are several storage backends for ANA:
 | Backend | Description |
 |---------|-------------|
 | None | With this backend, the pickled states are simply held in a dict. This is the default mode. |
-| Directory | With this backend, states are pickled into a directory (by default, "$PWD/pickles"). This can be created by passing the `pickle_dir` option to ana.set_dl() |
+| Directory | With this backend, states are pickled into a directory. This can be created by passing the `pickle_dir` option to ana.set_dl(), like so: `ana.set_dl(pickle_dir="/dev/shm/ana_storage")` |
+| MongoDB | With this backend, states are pickled into mongodb. This can be created by passing the `mongo_args`, `mongo_db`, and `mongo_collection` options to ana.set_dl(). These are passed into pymongo, like so: `pymongo.MongoClient(*mongo_args)[mongo_db][mongo_collection]` |
