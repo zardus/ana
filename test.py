@@ -28,7 +28,28 @@ class A(ana.Storable):
     def _ana_getliteral(self):
         return { 'n': self.n }
 
-def test_ana():
+def test_simple():
+    ana.set_dl(ana.SimpleDataLayer())
+    one = A(1)
+    one.make_uuid()
+    o = pickle.dumps(one)
+    one_copy = pickle.loads(o)
+    assert one is one_copy
+
+    two = A(1)
+    t = pickle.dumps(one)
+    two_copy = pickle.loads(t)
+    assert two_copy is not two
+
+    assert pickle.load(open('test_pickle.p')).n == 1337
+
+def write_a1337():
+    a1337 = A(1337)
+    a1337.make_uuid()
+    pickle.dump(a1337, open('test_pickle.p', 'w'))
+
+def test_dict():
+    ana.set_dl(ana.DictDataLayer())
     l.debug("Initializing 1")
     one = A(1)
     l.debug("Initializing 2")
@@ -78,7 +99,7 @@ def test_ana():
     nose.tools.assert_equal(second_json['value']['ana_uuid'], three_copy.ana_uuid)
 
 def test_dir():
-    ana.dl = ana.DataLayer(pickle_dir="/tmp/test_ana")
+    ana.dl = ana.DirDataLayer(pickle_dir="/tmp/test_ana")
     one = A(1)
     nose.tools.assert_is(one, A.ana_load(one.ana_store()))
     nose.tools.assert_true(os.path.exists("/tmp/test_ana/%s.p" % one.ana_uuid))
@@ -87,7 +108,7 @@ def test_dir():
     old_id = id(one)
     del one
     gc.collect()
-    ana.dl = ana.DataLayer(pickle_dir="/tmp/test_ana")
+    ana.dl = ana.DirDataLayer(pickle_dir="/tmp/test_ana")
     two = A.ana_load(uuid)
     nose.tools.assert_equals(uuid, two.ana_uuid)
     nose.tools.assert_not_equals(old_id, id(two))
@@ -102,5 +123,6 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         globals()['test_%s' % sys.argv[1]]()
     else:
-        test_ana()
+        test_simple()
+        test_dict()
         test_dir()

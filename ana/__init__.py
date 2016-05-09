@@ -5,12 +5,12 @@ logging.getLogger("ana").addHandler(logging.NullHandler())
 
 from .datalayer import *
 
-dl = DataLayer()
+dl = SimpleDataLayer()
 def get_dl():
     return dl
-def set_dl(*args, **kwargs):
+def set_dl(new_dl):
     global dl
-    dl = DataLayer(*args, **kwargs)
+    dl = new_dl
 
 class M(object):
     '''This is a marker that's used internally by ANA.'''

@@ -119,6 +119,8 @@ class Storable(object):
         u = getattr(self, '_ana_uuid', None)
         if u is None:
             return (D, (None, self.__class__, self._ana_getstate()))
+        elif get_dl()._store_type == 'simple':
+            return (D, (u, self.__class__, self._ana_getstate()))
         else:
             self.ana_store()
             return (D, (u, self.__class__, None))

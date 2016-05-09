@@ -48,14 +48,14 @@ assert b is not a
 # Now, let's try assigning this guy a UUID
 a.make_uuid()
 
-# If we pickle it again, the only thing returned from the dumps
-# is the UUID. The actual state is stored in ANA. Now, when the
-# object is unpickled, the identity is preserved.
+# Now, when the object is unpickled, the identity is preserved.
 a_pickled = pickle.dumps(a)
 b = pickle.loads(a_pickled)
 assert b is a
 
-# There are also functions that provide easy storing and loading.
+# There are also functions that provide easy storing and loading
+# in advanced situations. These these require an actual storage
+# datalayer (see below) other than SimpleDataLayer.
 a_uuid = a.uuid
 a.ana_store()
 b = A.ana_load(a_uuid) # note that this is a class method
@@ -143,6 +143,7 @@ There are several storage backends for ANA:
 
 | Backend | Description |
 |---------|-------------|
-| None | With this backend, the pickled states are simply held in a dict. This is the default mode. |
-| Directory | With this backend, states are pickled into a directory. This can be created by passing the `pickle_dir` option to ana.set_dl(), like so: `ana.set_dl(pickle_dir="/dev/shm/ana_storage")` |
-| MongoDB | With this backend, states are pickled into mongodb. This can be created by passing the `mongo_args`, `mongo_db`, and `mongo_collection` options to ana.set_dl(). These are passed into pymongo, like so: `pymongo.MongoClient(*mongo_args)[mongo_db][mongo_collection]` |
+| Simple (default) | This backend is basically a pickle passthrough, and serialization just works normally through pickle. |
+| Dict | With this backend, the pickled states are held in a dict. The dict can be a distributed storage structure (i.e., redis or something). This can be initialized as: ana.set_dl(ana.DictDataLayer(the_dict={}))` |
+| Directory | With this backend, states are pickled into a directory. This can be created by passing the `pickle_dir` option to ana.set_dl(), like so: `ana.set_dl(ana.DirDataLayer("/dev/shm/ana_storage"))` |
+| MongoDB | With this backend, states are pickled into mongodb. This can be created by passing the `mongo_args`, `mongo_db`, and `mongo_collection` options to `ana.set_dl(ana.MongoDataLayer(mongo_args, mongo_db=mongo_db, mongo_collection=mongo_collection))`. These are passed into pymongo, like so: `pymongo.MongoClient(*mongo_args)[mongo_db][mongo_collection]` |
