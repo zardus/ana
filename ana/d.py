@@ -5,7 +5,7 @@ def D(uuid, child_cls, state):
     l.debug("Deserializing Storable with uuid %s", uuid)
 
     if uuid is None and state is None:
-        raise ANAError("D received a None uuid and a None state")
+        raise ANAError("A blank UUID and a blank state were passed into the deserialization routine. This is most likely caused by a failure to return anything from object._ana_getstate().")
 
     if uuid is not None:
         self = get_dl().uuid_cache.get(uuid, None)
