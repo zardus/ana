@@ -41,12 +41,12 @@ def test_simple():
     two_copy = pickle.loads(t)
     assert two_copy is not two
 
-    assert pickle.load(open('test_pickle.p')).n == 1337
+    assert pickle.load(open(os.path.join(os.path.dirname(__file__), 'test_pickle.p'))).n == 1337
 
 def write_a1337():
     a1337 = A(1337)
     a1337.make_uuid()
-    pickle.dump(a1337, open('test_pickle.p', 'w'))
+    pickle.dump(a1337, open(os.path.join(os.path.dirname(__file__), 'test_pickle.p'), 'w'))
 
 def test_dict():
     ana.set_dl(ana.DictDataLayer())
