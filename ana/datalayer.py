@@ -50,11 +50,11 @@ class DirDataLayer(DataLayer):
             os.makedirs(self._dir)
 
     def store_state(self, uuid, s):
-        with open(os.path.join(self._dir, str(uuid)+'.p'), 'w') as f:
+        with open(os.path.join(self._dir, str(uuid)+'.p'), 'wb') as f:
             pickle.dump(s, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     def load_state(self, uuid):
-        with open(os.path.join(self._dir, str(uuid)+'.p')) as f:
+        with open(os.path.join(self._dir, str(uuid)+'.p'), 'rb') as f:
             return pickle.load(f)
 
 class MongoDataLayer(DataLayer):
