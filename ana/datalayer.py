@@ -1,4 +1,5 @@
 import os
+import uuid as uuid_module
 import weakref
 import cPickle as pickle
 
@@ -21,6 +22,7 @@ class DataLayer:
     def __init__(self):
         self.uuid_cache = weakref.WeakValueDictionary()
         self._store_type = None
+        self.uuid = uuid_module.uuid4()
 
     def store_state(self, uuid, s):
         raise NotImplementedError()

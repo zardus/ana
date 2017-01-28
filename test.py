@@ -113,6 +113,18 @@ def test_dir():
     nose.tools.assert_equals(uuid, two.ana_uuid)
     nose.tools.assert_not_equals(old_id, id(two))
 
+    # reset the datalayer to make sure we handle it properly
+    ana.set_dl(ana.DictDataLayer())
+    try:
+        two = A.ana_load(uuid)
+        assert False
+    except KeyError:
+        pass
+    two.ana_store()
+    del two
+    three = A.ana_load(uuid)
+    assert uuid, three.ana_uuid
+
 if __name__ == '__main__':
     import sys
     logging.getLogger("ana.test").setLevel(logging.DEBUG)

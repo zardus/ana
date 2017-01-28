@@ -14,18 +14,19 @@ def D(uuid, child_cls, state):
             return self
 
     self = super(Storable, child_cls).__new__(child_cls) #pylint:disable=bad-super-call
+    dl = get_dl()
     if uuid is not None:
-        get_dl().uuid_cache[uuid] = self
+        dl.uuid_cache[uuid] = self
 
     if uuid is not None and state is None:
         l.debug("... loading state")
         state = get_dl().load_state(uuid)
 
     if uuid is not None:
-        self._stored = True
+        self._stored = dl.uuid
         l.debug("... returning newly cached")
     else:
-        self._stored = False
+        self._stored = None
         l.debug("... returning non-UUID storable")
 
     self._ana_setstate(state)
