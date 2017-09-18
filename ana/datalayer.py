@@ -1,7 +1,11 @@
 import os
 import uuid as uuid_module
 import weakref
-import cPickle as pickle
+
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 try:
     import pymongo
