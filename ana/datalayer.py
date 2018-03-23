@@ -17,7 +17,7 @@ except ImportError:
 import logging
 l = logging.getLogger("ana.datalayer")
 
-class DataLayer:
+class DataLayer(object):
     '''
     The DataLayer handles storing and retrieving UUID-identified objects
     to/from a central store.

@@ -1,3 +1,5 @@
+from future.utils import iteritems
+from past.builtins import long, unicode
 import uuid as uuid_module
 
 import logging
@@ -50,7 +52,7 @@ class Storable(object):
             return o
         elif isinstance(o, dict):
             return {
-                Storable._any_to_literal(k, known_set, objects):Storable._any_to_literal(v, known_set, objects) for k,v in o.iteritems()
+                Storable._any_to_literal(k, known_set, objects):Storable._any_to_literal(v, known_set, objects) for k,v in iteritems(o)
             }
         elif isinstance(o, list) or isinstance(o, tuple) or isinstance(o, set):
             return [ Storable._any_to_literal(e, known_set, objects) for e in o ]
@@ -106,7 +108,7 @@ class Storable(object):
             return { k: getattr(self, k) for k in self._all_slots() if hasattr(self, k) }
 
     def _ana_setstate(self, s):
-        for k,v in s.items():
+        for k,v in iteritems(s):
             setattr(self, k, v)
 
     def _ana_getliteral(self):
