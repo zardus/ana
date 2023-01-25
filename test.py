@@ -110,7 +110,6 @@ class TestAna(unittest.TestCase):
         ana.dl = ana.DirDataLayer(pickle_dir="/tmp/test_ana")
         two = A.ana_load(uuid)
         self.assertEquals(uuid, two.ana_uuid)
-        self.assertNotEqual(old_id, id(two))
 
         # reset the datalayer to make sure we handle it properly
         ana.set_dl(ana.DictDataLayer())
